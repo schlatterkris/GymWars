@@ -64,22 +64,25 @@ export function PersonalPlan() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [logValues, setLogValues] = useState<Record<string, { weight: string; reps: string; sets: string }>>({});
+  const [adding, setAdding] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleAddExercise = async () => {
-    if (!exerciseName || !targetSets || !targetReps) return;
+    if (!exerciseName || !targetSets || !targetReps || adding) return;
     const existing = getPlansByDay(selectedDay);
     const dup = existing.find(e => e.exercise_name.toLowerCase() === exerciseName.toLowerCase());
     if (dup) {
       alert('Exercise already exists for this day');
       return;
     }
+    setAdding(true);
     await addPlan({
       exercise_name: exerciseName,
       day_of_week: selectedDay,
       target_sets: Number(targetSets),
       target_reps: Number(targetReps),
     });
+    setAdding(false);
     setExerciseName('');
   };
 

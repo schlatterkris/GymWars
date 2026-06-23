@@ -16,11 +16,24 @@ export function useWorkoutPlans(userId: number | null) {
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (cleanup = false) => {
     if (!userId) return;
     try {
       const data = await api.workoutPlans.list(userId);
-      setPlans(data);
+      const seen = new Set<string>();
+      const dupIds: number[] = [];
+      const deduped = data.filter(p => {
+        const key = `${p.day_of_week}|${p.exercise_name.toLowerCase()}`;
+        if (seen.has(key)) { dupIds.push(p.id); return false; }
+        seen.add(key);
+        return true;
+      });
+      if (dupIds.length > 0 && !cleanup) {
+        await Promise.all(dupIds.map(id => api.workoutPlans.remove(id)));
+        return fetch(true);
+      }
+      deduped.sort((a, b) => a.id - b.id);
+      setPlans(deduped);
     } catch (err) {
       console.error(err);
     } finally {

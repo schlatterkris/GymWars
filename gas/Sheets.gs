@@ -72,6 +72,9 @@ function handleWorkoutPlans(method, params, ss) {
     return all;
   }
   if (method === 'POST') {
+    const all = readRows(sheet);
+    const dup = all.find(p => String(p.user_id) === String(params.user_id) && p.day_of_week === params.day_of_week && p.exercise_name.toLowerCase() === params.exercise_name.toLowerCase());
+    if (dup) return dup;
     params.id = nextId(sheet);
     return appendRow(sheet, params, ss);
   }
