@@ -1,15 +1,28 @@
 const GAS_URL = import.meta.env.VITE_GAS_URL || '';
 
 async function request(method: 'GET' | 'POST', path: string, body?: Record<string, unknown>) {
-  const url = method === 'GET'
-    ? `${GAS_URL}?path=${path}&${new URLSearchParams((body as Record<string, string>) || {}).toString()}`
+  const isGet = method === 'GET';
+  const params: Record<string, string> = { path, ...((body || {}) as Record<string, string>) };
+
+  const url = isGet
+    ? `${GAS_URL}?${new URLSearchParams(params).toString()}`
     : GAS_URL;
 
-  const res = await fetch(url, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: method === 'POST' ? JSON.stringify({ path, ...body }) : undefined,
-  });
+  if (isGet) {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Request failed');
+    return json.data;
+  }
+
+  const payload = JSON.stringify({ path, ...body });
+  let res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual' });
+
+  if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+    const location = res.headers.get('Location');
+    if (!location) throw new Error('Redirect with no Location');
+    res = await fetch(location, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+  }
 
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Request failed');
