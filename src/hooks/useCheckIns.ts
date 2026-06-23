@@ -11,11 +11,10 @@ export function useCheckIns(userId: number | null) {
   const [checkins, setCheckIns] = useState<CheckIn[]>([]);
   const [streak, setStreak] = useState(0);
   const [checkedInToday, setCheckedInToday] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     if (!userId) return;
-    setLoading(true);
     try {
       const data = await api.checkins.list(userId);
       setCheckIns(data);

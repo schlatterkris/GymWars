@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useWorkoutPlans } from '../hooks/useWorkoutPlans';
+import { useWorkoutEntries } from '../hooks/useWorkoutEntries';
 import { CardSkeleton } from '../components/Skeleton';
 
 const CANNED_PLANS: Record<string, { day: string; exercise: string; sets: number; reps: number }[]> = {
@@ -55,12 +56,14 @@ const CANNED_PLANS: Record<string, { day: string; exercise: string; sets: number
 export function PersonalPlan() {
   const { user } = useAuth();
   const { addPlan, removePlan, getPlansByDay, loading, DAYS } = useWorkoutPlans(user?.id ?? null);
+  const { logEntry, getLastEntry } = useWorkoutEntries(user?.id ?? null);
   const [selectedDay, setSelectedDay] = useState('Monday');
   const [exerciseName, setExerciseName] = useState('');
   const [targetSets, setTargetSets] = useState('3');
   const [targetReps, setTargetReps] = useState('10');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResult, setAiResult] = useState<string | null>(null);
+  const [logValues, setLogValues] = useState<Record<string, { weight: string; reps: string; sets: string }>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleAddExercise = async () => {
@@ -150,6 +153,20 @@ export function PersonalPlan() {
 
   const currentExercises = getPlansByDay(selectedDay);
 
+  const handleLogEntry = async (exerciseName: string) => {
+    const v = logValues[exerciseName];
+    if (!v?.weight || !v?.reps || !v?.sets) return;
+    await logEntry(exerciseName, Number(v.weight), Number(v.reps), Number(v.sets));
+    setLogValues(prev => ({ ...prev, [exerciseName]: { weight: '', reps: '', sets: '' } }));
+  };
+
+  const setLogVal = (exerciseName: string, field: 'weight' | 'reps' | 'sets', value: string) => {
+    setLogValues(prev => ({
+      ...prev,
+      [exerciseName]: { ...prev[exerciseName], [field]: value },
+    }));
+  };
+
   return (
     <div className="page">
       <h1 className="page-title">Personal Plan</h1>
@@ -208,22 +225,45 @@ export function PersonalPlan() {
             {currentExercises.length === 0 && (
               <p style={{ fontSize: '0.875rem', color: 'var(--slate-400)' }}>No exercises planned</p>
             )}
-            {currentExercises.map(ex => (
-              <div key={ex.id} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '8px 0', borderBottom: '1px solid var(--slate-700)',
-              }}>
-                <div>
-                  <p style={{ fontWeight: 500 }}>{ex.exercise_name}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--slate-400)' }}>
-                    {ex.target_sets} × {ex.target_reps}
-                  </p>
+            {currentExercises.map(ex => {
+              const last = getLastEntry(ex.exercise_name);
+              return (
+                <div key={ex.id}>
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '8px 0', borderBottom: '1px solid var(--slate-700)',
+                  }}>
+                    <div>
+                      <p style={{ fontWeight: 500 }}>{ex.exercise_name}</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--slate-400)' }}>
+                        Target: {ex.target_sets} × {ex.target_reps}
+                        {last && ` | Last: ${last.weight}lbs × ${last.reps} × ${last.sets}`}
+                      </p>
+                    </div>
+                    <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => removePlan(ex.id)}>
+                      ✕
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--slate-700)', alignItems: 'end' }}>
+                    <div style={{ flex: 1 }}>
+                      <label>Weight</label>
+                      <input type="number" value={logValues[ex.exercise_name]?.weight || ''} onChange={e => setLogVal(ex.exercise_name, 'weight', e.target.value)} placeholder="lbs" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Reps</label>
+                      <input type="number" value={logValues[ex.exercise_name]?.reps || ''} onChange={e => setLogVal(ex.exercise_name, 'reps', e.target.value)} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Sets</label>
+                      <input type="number" value={logValues[ex.exercise_name]?.sets || ''} onChange={e => setLogVal(ex.exercise_name, 'sets', e.target.value)} />
+                    </div>
+                    <button className="btn btn-primary" style={{ padding: '10px 16px', whiteSpace: 'nowrap' }} onClick={() => handleLogEntry(ex.exercise_name)}>
+                      Log
+                    </button>
+                  </div>
                 </div>
-                <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => removePlan(ex.id)}>
-                  ✕
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="card">

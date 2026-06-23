@@ -72,14 +72,6 @@ export function Dashboard() {
           )}
         </div>
       )}
-
-      {!chLoading && !activeChallenge && (
-        <div className="card">
-          <p style={{ color: 'var(--slate-400)', fontSize: '0.875rem' }}>
-            No active challenge this week
-          </p>
-        </div>
-      )}
     </div>
   );
 }

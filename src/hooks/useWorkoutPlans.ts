@@ -14,11 +14,10 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 
 export function useWorkoutPlans(userId: number | null) {
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     if (!userId) return;
-    setLoading(true);
     try {
       const data = await api.workoutPlans.list(userId);
       setPlans(data);
