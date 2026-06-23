@@ -14,6 +14,7 @@ function doPost(e) {
 function handleRequest(method, path, params) {
   try {
     const ss = SpreadsheetApp.openById(SHEET_ID);
+    method = params._method || method;
     let result;
     switch (path) {
       case '/users': result = handleUsers(method, params, ss); break;
