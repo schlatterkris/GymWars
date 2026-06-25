@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './services/AuthContext';
 import { TabBar } from './components/TabBar';
+import { NotificationBell } from './components/NotificationBell';
 import { Dashboard } from './pages/Dashboard';
 import { PersonalPlan } from './pages/PersonalPlan';
 import { Reports } from './pages/Reports';
@@ -28,7 +29,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <>{children}
+    <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 150 }}><NotificationBell /></div>
+  </>;
 }
 
 export default function App() {

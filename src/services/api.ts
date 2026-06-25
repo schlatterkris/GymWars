@@ -16,7 +16,7 @@ export const api = {
     create: (data: Record<string, unknown>) => request('POST', '/users', data),
   },
   checkins: {
-    list: (userId: string | number) => request('GET', '/checkins', { userId: String(userId) }),
+    list: (userId?: string | number) => request('GET', '/checkins', userId ? { userId: String(userId) } : {}),
     create: (userId: string | number) => request('POST', '/checkins', { userId: String(userId) }),
   },
   challenges: {
