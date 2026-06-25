@@ -125,7 +125,5 @@ function sendPush(title, body, ss) {
   }
 }
 
-function storeFirebaseServiceAccount() {
-  const json = 'PASTE_YOUR_SERVICE_ACCOUNT_JSON_HERE';
-  PropertiesService.getScriptProperties().setProperty('FIREBASE_SERVICE_ACCOUNT', json);
-}
+// Run once: set FIREBASE_SERVICE_ACCOUNT script property with the full service account JSON.
+// Go to Project Settings → Script Properties → Add property → name: FIREBASE_SERVICE_ACCOUNT → value: (paste JSON)
