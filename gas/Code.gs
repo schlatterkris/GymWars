@@ -88,20 +88,44 @@ function nextId(sheet) {
   return sheet.getLastRow();
 }
 
+function getFcmToken_() {
+  const json = PropertiesService.getScriptProperties().getProperty('FIREBASE_SERVICE_ACCOUNT');
+  if (!json) return null;
+  const sa = JSON.parse(json);
+  return OAuth2.createService('firebase')
+    .setTokenUrl(sa.token_uri)
+    .setPrivateKey(sa.private_key)
+    .setIssuer(sa.client_email)
+    .setSubject(sa.client_email)
+    .setScope('https://www.googleapis.com/auth/firebase.messaging')
+    .setPropertyStore(PropertiesService.getScriptProperties())
+    .getAccessToken();
+}
+
 function sendPush(title, body, ss) {
-  const key = PropertiesService.getScriptProperties().getProperty('FCM_SERVER_KEY');
-  if (!key) return;
+  const token = getFcmToken_();
+  if (!token) return;
   const tokens = readRows(getSheet('PushTokens', ss));
   if (!tokens.length) return;
-  const payload = {
-    notification: { title, body },
-    tokens: tokens.map(t => t.token).filter(Boolean),
-  };
-  const opts = {
-    method: 'post',
-    headers: { 'Authorization': 'key=' + key, 'Content-Type': 'application/json' },
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true,
-  };
-  UrlFetchApp.fetch('https://fcm.googleapis.com/fcm/send', opts);
+  for (let i = 0; i < tokens.length; i++) {
+    if (!tokens[i].token) continue;
+    const payload = {
+      message: {
+        token: tokens[i].token,
+        notification: { title, body },
+        webpush: { fcm_options: { link: '/GymWars/' } },
+      },
+    };
+    UrlFetchApp.fetch('https://fcm.googleapis.com/v1/projects/gymwars-2bb72/messages:send', {
+      method: 'post',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+  }
+}
+
+function storeFirebaseServiceAccount() {
+  const json = 'PASTE_YOUR_SERVICE_ACCOUNT_JSON_HERE';
+  PropertiesService.getScriptProperties().setProperty('FIREBASE_SERVICE_ACCOUNT', json);
 }
