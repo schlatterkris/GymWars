@@ -23,13 +23,14 @@ function handleCheckIns(method, params, ss) {
     return all;
   }
   if (method === 'POST') {
-    const today = new Date().toISOString().slice(0, 10);
+    const tz = Session.getScriptTimeZone();
+    const todayStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
     const all = readRows(sheet);
-    const already = all.find(c => String(c.user_id) === String(params.userId) && String(c.date).slice(0, 10) === today);
+    const already = all.find(c => String(c.user_id) === String(params.userId) && String(c.date).slice(0, 10) === todayStr);
     if (already) throw new Error('Already checked in today');
     params.id = nextId(sheet);
     params.user_id = params.userId;
-    params.date = new Date().toISOString();
+    params.date = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd'T'HH:mm:ss");
     const result = appendRow(sheet, params, ss);
     const users = getSheet('Users', ss);
     const userName = readRows(users).find(u => String(u.id) === String(params.userId))?.name || 'Someone';
@@ -106,16 +107,17 @@ function handleWorkoutEntries(method, params, ss) {
 function getStreak(params, ss) {
   const sheet = getSheet('CheckIns', ss);
   const all = readRows(sheet);
+  const tz = Session.getScriptTimeZone();
   const userCheckins = all
     .filter(c => String(c.user_id) === params.userId)
-    .map(c => new Date(String(c.date).slice(0, 10)))
-    .sort((a, b) => a - b);
+    .map(c => String(c.date).slice(0, 10))
+    .sort();
 
-  if (!userCheckins.length) return { streak: 0, days: [] };
+  if (!userCheckins.length) return { streak: 0 };
 
-  const dates = new Set(userCheckins.map(d => d.toISOString().slice(0, 10)));
+  const dates = new Set(userCheckins);
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStr = Utilities.formatDate(today, tz, 'yyyy-MM-dd');
   let streak = 0;
   let cursor = new Date(today);
   const dayMs = 86400000;
@@ -126,17 +128,17 @@ function getStreak(params, ss) {
       cursor.setTime(cursor.getTime() - dayMs);
       continue;
     }
-    const key = cursor.toISOString().slice(0, 10);
+    const key = Utilities.formatDate(cursor, tz, 'yyyy-MM-dd');
     if (dates.has(key)) {
       streak++;
       cursor.setTime(cursor.getTime() - dayMs);
     } else {
-      if (cursor.getTime() === today.getTime()) break;
+      if (key === todayStr) break;
       const yesterday = new Date(today.getTime() - dayMs);
       while (yesterday.getDay() === 0 || yesterday.getDay() === 6) {
         yesterday.setTime(yesterday.getTime() - dayMs);
       }
-      if (cursor.getTime() === yesterday.getTime()) break;
+      if (key === Utilities.formatDate(yesterday, tz, 'yyyy-MM-dd')) break;
       break;
     }
   }

@@ -18,7 +18,7 @@ export function useCheckIns(userId: number | null) {
     try {
       const data = await api.checkins.list(userId);
       setCheckIns(data);
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('en-CA');
       setCheckedInToday(data.some((c: CheckIn) => String(c.date).slice(0, 10) === today));
       const streakData = await api.reports.streak(userId);
       setStreak(streakData.streak);
