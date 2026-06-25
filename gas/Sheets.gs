@@ -30,7 +30,11 @@ function handleCheckIns(method, params, ss) {
     params.id = nextId(sheet);
     params.user_id = params.userId;
     params.date = new Date().toISOString();
-    return appendRow(sheet, params, ss);
+    const result = appendRow(sheet, params, ss);
+    const users = getSheet('Users', ss);
+    const userName = readRows(users).find(u => String(u.id) === String(params.userId))?.name || 'Someone';
+    sendPush('Check-in!', userName + ' just checked in! Keep up the streak! 💪', ss);
+    return result;
   }
 }
 
@@ -148,6 +152,19 @@ function handleComments(method, params, ss) {
   if (method === 'POST') {
     params.id = nextId(sheet);
     params.created_at = new Date().toISOString();
+    const result = appendRow(sheet, params, ss);
+    sendPush('New Trash Talk', (params.user_name || 'Someone') + ': ' + (params.message || '').slice(0, 80), ss);
+    return result;
+  }
+}
+
+function handlePushTokens(method, params, ss) {
+  const sheet = getSheet('PushTokens', ss);
+  if (method === 'POST') {
+    params.id = nextId(sheet);
+    params.created_at = new Date().toISOString();
+    const all = readRows(sheet);
+    if (all.find(t => t.token === params.token)) return { ok: true };
     return appendRow(sheet, params, ss);
   }
 }

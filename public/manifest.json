@@ -1,0 +1,12 @@
+{
+  "name": "GymWars",
+  "short_name": "GymWars",
+  "description": "Challenge your family to get fit",
+  "start_url": "/GymWars/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#f97316",
+  "icons": [
+    { "src": "/GymWars/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -41,6 +41,9 @@ export const api = {
     list: () => request('GET', '/comments'),
     create: (data: Record<string, unknown>) => request('POST', '/comments', data),
   },
+  pushTokens: {
+    register: (token: string) => request('POST', '/pushTokens', { token }),
+  },
   reports: {
     streak: (userId: string | number) => request('GET', '/reports/streaks', { userId: String(userId) }),
     challengeResults: () => request('GET', '/reports/challengeResults'),

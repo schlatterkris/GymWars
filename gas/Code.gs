@@ -1,5 +1,5 @@
 const SHEET_ID = '1VvlaticHK2hw79N5Sd5tZvy60srhSPv3Rc_fJf11QbU';
-const SHEETS = ['Users', 'CheckIns', 'WeeklyChallenges', 'ChallengeEntries', 'WorkoutPlans', 'WorkoutEntries', 'Comments'];
+const SHEETS = ['Users', 'CheckIns', 'WeeklyChallenges', 'ChallengeEntries', 'WorkoutPlans', 'WorkoutEntries', 'Comments', 'PushTokens'];
 
 function doGet(e) {
   const path = e.parameter.path || '';
@@ -24,9 +24,10 @@ function handleRequest(method, path, params) {
       case '/workoutPlans': result = handleWorkoutPlans(method, params, ss); break;
       case '/workoutEntries': result = handleWorkoutEntries(method, params, ss); break;
       case '/comments': result = handleComments(method, params, ss); break;
+      case '/pushTokens': result = handlePushTokens(method, params, ss); break;
       case '/reports/streaks': result = getStreak(params, ss); break;
       case '/reports/challengeResults': result = getChallengeResults(params, ss); break;
-      case '': case '/': result = { endpoints: ['/users', '/checkins', '/challenges', '/challengeEntries', '/workoutPlans', '/workoutEntries', '/reports/streaks', '/reports/challengeResults'], sheetId: SHEET_ID }; break;
+      case '': case '/': result = { endpoints: ['/users', '/checkins', '/challenges', '/challengeEntries', '/workoutPlans', '/workoutEntries', '/comments', '/pushTokens', '/reports/streaks', '/reports/challengeResults'], sheetId: SHEET_ID }; break;
       default: throw new Error('Unknown path: ' + path);
     }
     return ContentService.createTextOutput(JSON.stringify({ ok: true, data: result }))
@@ -40,7 +41,7 @@ function handleRequest(method, path, params) {
 function getSheet(name, ss) {
   const sheet = ss.getSheetByName(name);
   if (sheet) return sheet;
-  const headers = { Users: ['id', 'email', 'name', 'created_at'], CheckIns: ['id', 'user_id', 'date'], WeeklyChallenges: ['id', 'exercise_name', 'week_start', 'status'], ChallengeEntries: ['id', 'challenge_id', 'user_id', 'weight', 'reps', 'sets', 'created_at'], WorkoutPlans: ['id', 'user_id', 'exercise_name', 'day_of_week', 'target_sets', 'target_reps'], WorkoutEntries: ['id', 'user_id', 'exercise_name', 'date', 'weight', 'reps', 'sets'], Comments: ['id', 'user_id', 'user_name', 'message', 'created_at'] }[name];
+  const headers = { Users: ['id', 'email', 'name', 'created_at'], CheckIns: ['id', 'user_id', 'date'], WeeklyChallenges: ['id', 'exercise_name', 'week_start', 'status'], ChallengeEntries: ['id', 'challenge_id', 'user_id', 'weight', 'reps', 'sets', 'created_at'], WorkoutPlans: ['id', 'user_id', 'exercise_name', 'day_of_week', 'target_sets', 'target_reps'], WorkoutEntries: ['id', 'user_id', 'exercise_name', 'date', 'weight', 'reps', 'sets'], Comments: ['id', 'user_id', 'user_name', 'message', 'created_at'], PushTokens: ['id', 'token', 'user_id', 'created_at'] }[name];
   if (!headers) throw new Error(`Sheet "${name}" not found`);
   const created = ss.insertSheet(name);
   created.appendRow(headers);
@@ -85,4 +86,22 @@ function deleteRow(sheet, id) {
 
 function nextId(sheet) {
   return sheet.getLastRow();
+}
+
+function sendPush(title, body, ss) {
+  const key = PropertiesService.getScriptProperties().getProperty('FCM_SERVER_KEY');
+  if (!key) return;
+  const tokens = readRows(getSheet('PushTokens', ss));
+  if (!tokens.length) return;
+  const payload = {
+    notification: { title, body },
+    tokens: tokens.map(t => t.token).filter(Boolean),
+  };
+  const opts = {
+    method: 'post',
+    headers: { 'Authorization': 'key=' + key, 'Content-Type': 'application/json' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  };
+  UrlFetchApp.fetch('https://fcm.googleapis.com/fcm/send', opts);
 }
