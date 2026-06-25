@@ -3,6 +3,7 @@ import { useAuth } from '../services/AuthContext';
 import { useCheckIns } from '../hooks/useCheckIns';
 import { useChallenges } from '../hooks/useChallenges';
 import { CheckInButton } from '../components/CheckInButton';
+import { CommentSection } from '../components/CommentSection';
 import { CardSkeleton } from '../components/Skeleton';
 
 export function Dashboard() {
@@ -72,6 +73,8 @@ export function Dashboard() {
           )}
         </div>
       )}
+
+      <CommentSection />
     </div>
   );
 }

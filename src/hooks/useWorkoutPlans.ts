@@ -19,10 +19,10 @@ export function useWorkoutPlans(userId: number | null) {
   const fetch = useCallback(async (cleanup = false) => {
     if (!userId) return;
     try {
-      const data = await api.workoutPlans.list(userId);
+      const data = await api.workoutPlans.list(userId) as WorkoutPlan[];
       const seen = new Set<string>();
       const dupIds: number[] = [];
-      const deduped = data.filter(p => {
+      const deduped = data.filter((p: WorkoutPlan) => {
         const key = `${p.day_of_week}|${p.exercise_name.toLowerCase()}`;
         if (seen.has(key)) { dupIds.push(p.id); return false; }
         seen.add(key);

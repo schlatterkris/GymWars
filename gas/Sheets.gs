@@ -28,6 +28,7 @@ function handleCheckIns(method, params, ss) {
     const already = all.find(c => String(c.user_id) === String(params.userId) && String(c.date).slice(0, 10) === today);
     if (already) throw new Error('Already checked in today');
     params.id = nextId(sheet);
+    params.user_id = params.userId;
     params.date = new Date().toISOString();
     return appendRow(sheet, params, ss);
   }
@@ -137,6 +138,18 @@ function getStreak(params, ss) {
   }
 
   return { streak };
+}
+
+function handleComments(method, params, ss) {
+  const sheet = getSheet('Comments', ss);
+  if (method === 'GET') {
+    return readRows(sheet);
+  }
+  if (method === 'POST') {
+    params.id = nextId(sheet);
+    params.created_at = new Date().toISOString();
+    return appendRow(sheet, params, ss);
+  }
 }
 
 function getChallengeResults(params, ss) {

@@ -37,6 +37,10 @@ export const api = {
     list: (userId: string | number) => request('GET', '/workoutEntries', { userId: String(userId) }),
     create: (data: Record<string, unknown>) => request('POST', '/workoutEntries', data),
   },
+  comments: {
+    list: () => request('GET', '/comments'),
+    create: (data: Record<string, unknown>) => request('POST', '/comments', data),
+  },
   reports: {
     streak: (userId: string | number) => request('GET', '/reports/streaks', { userId: String(userId) }),
     challengeResults: () => request('GET', '/reports/challengeResults'),
